@@ -1,4 +1,4 @@
-##### _MULTITEST
+# _MULTITEST
 
 # Multi-Instance Website User Tester
 
