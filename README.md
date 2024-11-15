@@ -1,3 +1,5 @@
+***_MULTITEST
+
 # Multi-Instance Website User Tester
 
 A powerful tool for simultaneous testing of web applications across multiple simulated user instances. This tool allows automated interaction testing, form filling, and user behavior simulation in parallel instances.
