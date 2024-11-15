@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Website User Tester</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .url-input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+
+        .instances-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+        }
+
+        .instance {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .instance-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .instance iframe {
+            width: 100%;
+            height: 400px;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+        }
+
+        .instance-logs {
+            background: #f8f8f8;
+            padding: 10px;
+            border-radius: 4px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        button {
+            padding: 8px 16px;
+            margin-right: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #4CAF50;
+            color: white;
+        }
+
+        .action-btn {
+            background: #2196F3;
+        }
+
+        .close-btn {
+            background: #ff4444;
+            padding: 5px 10px;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <input type="text" id="websiteUrl" class="url-input" 
+               placeholder="Enter website URL (e.g., https://example.com)" />
+        <button onclick="addInstance()">Add New Instance</button>
+        <button onclick="interactWithAll()">Interact With All</button>
+    </div>
+    <div class="instances-container" id="instancesContainer"></div>
+
+    <script>
+        class UserInstance {
+            constructor(id) {
+                this.id = id;
+                this.logs = [];
+                this.createHTML();
+            }
+
+            createHTML() {
+                const instance = document.createElement('div');
+                instance.className = 'instance';
+                instance.id = `instance-${this.id}`;
+                
+                instance.innerHTML = `
+                    <div class="instance-header">
+                        <h3>User Instance ${this.id}</h3>
+                        <button class="close-btn" onclick="removeInstance(${this.id})">×</button>
+                    </div>
+                    <iframe id="iframe-${this.id}" sandbox="allow-same-origin allow-scripts allow-forms"></iframe>
+                    <div class="instance-controls">
+                        <button class="action-btn" onclick="clickRandomButton(${this.id})">Click Random Button</button>
+                        <button class="action-btn" onclick="fillRandomForm(${this.id})">Fill Random Form</button>
+                        <button class="action-btn" onclick="scrollRandom(${this.id})">Random Scroll</button>
+                    </div>
+                    <div class="instance-logs" id="logs-${this.id}"></div>
+                `;
+                
+                document.getElementById('instancesContainer').appendChild(instance);
+                this.loadWebsite();
+            }
+
+            loadWebsite() {
+                const url = document.getElementById('websiteUrl').value;
+                if (url) {
+                    const iframe = document.getElementById(`iframe-${this.id}`);
+                    iframe.src = url;
+                    this.log(`Loading website: ${url}`);
+                }
+            }
+
+            log(message) {
+                const logEntry = {
+                    timestamp: new Date().toLocaleTimeString(),
+                    message: message
+                };
+                this.logs.push(logEntry);
+                this.updateLogs();
+            }
+
+            updateLogs() {
+                const logsContainer = document.getElementById(`logs-${this.id}`);
+                logsContainer.innerHTML = this.logs.map(log => `
+                    <div class="log-entry">
+                        <span style="color: #666;">[${log.timestamp}]</span> ${log.message}
+                    </div>
+                `).join('');
+                logsContainer.scrollTop = logsContainer.scrollHeight;
+            }
+
+            async interact() {
+                try {
+                    const iframe = document.getElementById(`iframe-${this.id}`);
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    
+                    // Random interaction selection
+                    const actions = [
+                        () => this.clickRandomButton(),
+                        () => this.fillRandomForm(),
+                        () => this.scrollRandom()
+                    ];
+                    
+                    const randomAction = actions[Math.floor(Math.random() * actions.length)];
+                    await randomAction();
+                } catch (error) {
+                    this.log(`Error during interaction: ${error.message}`);
+                }
+            }
+
+            async clickRandomButton() {
+                try {
+                    const iframe = document.getElementById(`iframe-${this.id}`);
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    const buttons = iframeDoc.querySelectorAll('button, input[type="submit"], .btn, .button');
+                    
+                    if (buttons.length > 0) {
+                        const randomButton = buttons[Math.floor(Math.random() * buttons.length)];
+                        randomButton.click();
+                        this.log(`Clicked button: ${randomButton.textContent || randomButton.value}`);
+                    } else {
+                        this.log('No buttons found to click');
+                    }
+                } catch (error) {
+                    this.log(`Error clicking button: ${error.message}`);
+                }
+            }
+
+            async fillRandomForm() {
+                try {
+                    const iframe = document.getElementById(`iframe-${this.id}`);
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    const inputs = iframeDoc.querySelectorAll('input[type="text"], input[type="email"]');
+                    
+                    if (inputs.length > 0) {
+                        for (let input of inputs) {
+                            const randomValue = `test_${Math.random().toString(36).substring(7)}`;
+                            input.value = randomValue;
+                            this.log(`Filled input ${input.name || input.id}: ${randomValue}`);
+                        }
+                    } else {
+                        this.log('No form inputs found to fill');
+                    }
+                } catch (error) {
+                    this.log(`Error filling form: ${error.message}`);
+                }
+            }
+
+            async scrollRandom() {
+                try {
+                    const iframe = document.getElementById(`iframe-${this.id}`);
+                    const randomScroll = Math.floor(Math.random() * 1000);
+                    iframe.contentWindow.scrollTo(0, randomScroll);
+                    this.log(`Scrolled to position: ${randomScroll}px`);
+                } catch (error) {
+                    this.log(`Error scrolling: ${error.message}`);
+                }
+            }
+        }
+
+        let instances = new Map();
+        let nextId = 1;
+
+        function addInstance() {
+            const url = document.getElementById('websiteUrl').value;
+            if (!url) {
+                alert('Please enter a website URL first');
+                return;
+            }
+            
+            const instance = new UserInstance(nextId);
+            instances.set(nextId, instance);
+            nextId++;
+        }
+
+        function removeInstance(id) {
+            const element = document.getElementById(`instance-${id}`);
+            element.remove();
+            instances.delete(id);
+        }
+
+        function interactWithAll() {
+            instances.forEach(instance => instance.interact());
+        }
+
+        function clickRandomButton(id) {
+            const instance = instances.get(id);
+            if (instance) instance.clickRandomButton();
+        }
+
+        function fillRandomForm(id) {
+            const instance = instances.get(id);
+            if (instance) instance.fillRandomForm();
+        }
+
+        function scrollRandom(id) {
+            const instance = instances.get(id);
+            if (instance) instance.scrollRandom();
+        }
+    </script>
+</body>
+</html>
